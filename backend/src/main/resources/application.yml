@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: comissao-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/comissao}
+    username: ${DB_USER:comissao}
+    password: ${DB_PASSWORD:comissao}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: America/Sao_Paulo
+        default_batch_fetch_size: 100
+  flyway:
+    enabled: true
+  jackson:
+    deserialization:
+      # campos booleanos omitidos no JSON valem false (padrão do Jackson 3 é rejeitar)
+      FAIL_ON_NULL_FOR_PRIMITIVES: false
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 20MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/comissao}
+          # Em Docker o issuer público difere do endereço interno: informe o JWKS interno
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs}
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: always
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  storage:
+    diretorio: ${STORAGE_DIR:./storage}
+  ia:
+    api-key: ${ANTHROPIC_API_KEY:}
+    modelo: ${CLAUDE_MODEL:claude-opus-5-5}
+  ocr:
+    # Caminho do executável do Tesseract (opcional, para fotos e PDFs digitalizados)
+    tesseract: ${TESSERACT_CMD:tesseract}
+  zona: America/Sao_Paulo
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

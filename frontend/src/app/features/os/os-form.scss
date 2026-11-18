@@ -1,0 +1,16 @@
+.importar { border: 2px dashed #2e75b6; background: #f0f7ff; text-align: center; }
+.importar h2 { display: flex; align-items: center; justify-content: center; gap: .4rem; }
+.importar.arrastando { background: #dbeafe; }
+.importar .alerta { text-align: left; }
+.mt { margin-top: .8rem; }
+.cheio { width: 100%; }
+.disp { font-size: .85rem; margin: -.2rem 0 .8rem; }
+.sugestoes { background: #fff; border: 1px solid var(--borda); border-radius: 8px; padding: .4rem .6rem; margin: -.6rem 0 .8rem;
+             display: flex; flex-direction: column; gap: .3rem; }
+table.itens input, table input, table select, .linha select {
+  font: inherit; padding: .4rem .45rem; border: 1px solid #c8cfda; border-radius: 6px; background: #fff; box-sizing: border-box;
+}
+.w60 { width: 60px; } .w70 { width: 70px; } .w80 { width: 80px; } .w90 { width: 90px; } .w100 { width: 100px; }
+.w120 { width: 130px; } .w-desc { min-width: 220px; width: 100%; }
+tr.recebida input { background: #f3f4f6; }
+.acoes-fixas { position: sticky; bottom: 0; background: var(--fundo); padding: .6rem 0; }

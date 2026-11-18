@@ -1,0 +1,80 @@
+<div class="pagina">
+  <h1>Parametrização</h1>
+  <p class="suave">Valores, percentuais e prazos das regras de negócio. Alterações valem para os meses ainda não fechados — meses
+    fechados mantêm a faixa travada.</p>
+  @if (cfg(); as c) {
+    <section class="cartao">
+      <h2>Parâmetros gerais</h2>
+      <div class="campos">
+        @for (p of c.gerais; track p.chave) {
+          @if (p.tipo === 'BOOLEANO') {
+            <div class="param-bool">
+              <mat-slide-toggle [(ngModel)]="gerais[p.chave]">{{ p.descricao }}</mat-slide-toggle>
+              @if (p.chave === 'LEITURA_IA_HABILITADA') {
+                <span class="suave">{{ c.iaConfigurada ? 'Chave da IA configurada no servidor ✔' : 'Sem chave da IA (ANTHROPIC_API_KEY): usando leitor SAFI + OCR' }}</span>
+              }
+            </div>
+          } @else {
+            <mat-form-field>
+              <mat-label>{{ p.descricao }}</mat-label>
+              <input matInput [(ngModel)]="gerais[p.chave]" inputmode="decimal" />
+              <span matTextSuffix>&nbsp;{{ sufixo(p) }}</span>
+            </mat-form-field>
+          }
+        }
+      </div>
+      <button mat-flat-button (click)="salvarGerais()"><mat-icon>save</mat-icon> Salvar parâmetros</button>
+    </section>
+
+    <div class="grade-2">
+      <section class="cartao faixas">
+        <h2>Faixas de comissão mensal</h2>
+        <p class="suave">Total vendido no mês (a partir de) → % sobre as vendas.</p>
+        <table class="tabela">
+          <thead><tr><th>A partir de (R$)</th><th>%</th><th></th></tr></thead>
+          <tbody>@for (f of faixasComissao; track $index; let i = $index) {
+            <tr><td><input [(ngModel)]="f.valorMinimo" inputmode="decimal" /></td><td><input [(ngModel)]="f.valor" inputmode="decimal" /></td>
+              <td><button mat-icon-button (click)="faixasComissao.splice(i, 1)" aria-label="Remover"><mat-icon>close</mat-icon></button></td></tr>
+          }</tbody>
+        </table>
+        <div class="linha mt">
+          <button mat-stroked-button (click)="faixasComissao.push({ valorMinimo: '', valor: '' })"><mat-icon>add</mat-icon> Faixa</button>
+          <button mat-flat-button (click)="salvarFaixasComissao()"><mat-icon>save</mat-icon> Salvar faixas</button>
+        </div>
+      </section>
+      <section class="cartao faixas">
+        <h2>Meta da semana (bônus fixo)</h2>
+        <p class="suave">Total vendido na semana (a partir de) → bônus em R$.</p>
+        <table class="tabela">
+          <thead><tr><th>A partir de (R$)</th><th>Bônus (R$)</th><th></th></tr></thead>
+          <tbody>@for (f of faixasMeta; track $index; let i = $index) {
+            <tr><td><input [(ngModel)]="f.valorMinimo" inputmode="decimal" /></td><td><input [(ngModel)]="f.valor" inputmode="decimal" /></td>
+              <td><button mat-icon-button (click)="faixasMeta.splice(i, 1)" aria-label="Remover"><mat-icon>close</mat-icon></button></td></tr>
+          }</tbody>
+        </table>
+        <div class="linha mt">
+          <button mat-stroked-button (click)="faixasMeta.push({ valorMinimo: '', valor: '' })"><mat-icon>add</mat-icon> Patamar</button>
+          <button mat-flat-button (click)="salvarFaixasMeta()"><mat-icon>save</mat-icon> Salvar patamares</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="grade">
+      @for (l of listas; track l.chave) {
+        <section class="cartao">
+          <h2>{{ l.titulo }}</h2>
+          <div class="lista">
+            @for (it of itensDa(l.campo); track it.id) {
+              <mat-checkbox [checked]="it.ativo" (change)="alternarItem(l.chave, it, $event.checked)">{{ it.nome }}</mat-checkbox>
+            }
+          </div>
+          <div class="linha">
+            <mat-form-field><mat-label>Adicionar</mat-label><input matInput [(ngModel)]="novos[l.chave]" (keyup.enter)="adicionarItem(l.chave)" /></mat-form-field>
+            <button mat-stroked-button (click)="adicionarItem(l.chave)">Adicionar</button>
+          </div>
+        </section>
+      }
+    </div>
+    <p class="suave">Usuários e perfis de acesso (Vendedor, Gestor, Chefe de Produção) são administrados no Keycloak.</p>
+  }
+</div>

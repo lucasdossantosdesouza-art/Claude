@@ -1,0 +1,81 @@
+# Ambiente completo: PostgreSQL + Keycloak + API (Spring Boot) + Web (Angular/nginx)
+#   docker compose up -d --build
+#   Web:       http://localhost:8081
+#   API/Swagger: http://localhost:8080/swagger-ui.html
+#   Keycloak:  http://localhost:8180  (admin/admin)
+name: comissao
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: comissao
+      POSTGRES_USER: comissao
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-comissao}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres-init.sql:/docker-entrypoint-initdb.d/01-keycloak.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comissao"]
+      interval: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      # URL pública (a que o navegador usa); o backend acessa internamente por keycloak:8080
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    ports:
+      - "8180:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/comissao
+      DB_USER: comissao
+      DB_PASSWORD: ${DB_PASSWORD:-comissao}
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/comissao
+      KEYCLOAK_JWKS_URI: http://keycloak:8080/realms/comissao/protocol/openid-connect/certs
+      CORS_ORIGINS: http://localhost:8081,http://localhost:4200
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - storage:/data/storage
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  web:
+    build: ./frontend
+    environment:
+      API_URL: /api
+      KEYCLOAK_URL: http://localhost:8180
+      KEYCLOAK_REALM: comissao
+      KEYCLOAK_CLIENT_ID: comissao-web
+    ports:
+      - "8081:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  storage:

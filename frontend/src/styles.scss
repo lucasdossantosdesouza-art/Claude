@@ -1,0 +1,87 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (primary: mat.$azure-palette, tertiary: mat.$blue-palette),
+    typography: Roboto,
+    density: -1,
+  ));
+}
+
+:root {
+  --azul: #1f4e79;
+  --fundo: #f4f6f9;
+  --borda: #dde2ea;
+  --suave: #6b7280;
+  --verde: #15803d;
+  --vermelho: #c62828;
+  --amarelo: #b45309;
+}
+
+html, body { height: 100%; }
+body { margin: 0; overflow-x: hidden; font-family: Roboto, "Segoe UI", sans-serif; background: var(--fundo); color: #1d2330; }
+a { color: #2e75b6; text-decoration: none; cursor: pointer; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.4rem; margin: .2rem 0 1rem; font-weight: 600; }
+h2 { font-size: 1.05rem; margin: 0 0 .8rem; font-weight: 600; }
+h3 { font-size: .95rem; margin: 1rem 0 .4rem; font-weight: 600; }
+
+.pagina { max-width: 1280px; margin: 0 auto; padding: 1rem; }
+.cartao { background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.grade { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1rem; }
+.grade-2 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+.linha { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.entre { justify-content: space-between; }
+.campos { display: grid; gap: .6rem .8rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.campos .largo { grid-column: span 2; }
+.campos mat-form-field, .filtros mat-form-field { width: 100%; }
+.filtros { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.filtros mat-form-field { flex: 1 1 180px; }
+
+.kpi { background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: .9rem 1rem; height: 100%; box-sizing: border-box; }
+.kpi .rot { color: var(--suave); font-size: .82rem; }
+.kpi .val { font-size: 1.45rem; font-weight: 700; margin-top: .2rem; }
+.kpi .sub { color: var(--suave); font-size: .8rem; margin-top: .2rem; }
+.kpi.destaque .val, .vermelho { color: var(--vermelho); }
+.verde { color: var(--verde); }
+.amarelo { color: var(--amarelo); }
+.suave { color: var(--suave); font-size: .85rem; }
+
+.tabela-wrap { overflow-x: auto; }
+table.tabela { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table.tabela th, table.tabela td { padding: .5rem; border-bottom: 1px solid var(--borda); text-align: left; vertical-align: top; }
+table.tabela th { background: #eef2f7; font-weight: 600; font-size: .8rem; color: #374151; white-space: nowrap; }
+table.tabela td.num, table.tabela th.num { text-align: right; white-space: nowrap; }
+tr.linha-vermelha td { background: #fff1f1; }
+tr.linha-alerta td { background: #fff8e6; }
+
+.badge { display: inline-block; padding: .12rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 600;
+         background: #e5e7eb; color: #374151; white-space: nowrap; }
+.badge.ABERTA, .badge.PENDENTE, .badge.PENDENTE_RECEBIMENTO, .badge.ABERTA_OC { background: #dbeafe; color: #1e40af; }
+.badge.FECHADA, .badge.RECEBIDA, .badge.PAGA, .badge.RESOLVIDA { background: #dcfce7; color: #166534; }
+.badge.CANCELADA { background: #f3f4f6; color: #6b7280; text-decoration: line-through; }
+.badge.AUTORIZADA, .badge.atraso { background: #fee2e2; color: var(--vermelho); }
+.badge.PROVISORIA, .badge.meia { background: #fef3c7; color: #92400e; }
+.badge.urgente { background: var(--vermelho); color: #fff; }
+
+.alerta { padding: .7rem 1rem; border-radius: 10px; margin-bottom: 1rem; background: #fef3c7; color: #78350f; }
+.alerta.erro { background: #fee2e2; color: #7f1d1d; }
+.alerta.ok { background: #dcfce7; color: #14532d; }
+.progresso { background: #e5e7eb; border-radius: 999px; height: 8px; overflow: hidden; margin: .4rem 0; }
+.progresso > div { height: 100%; background: var(--verde); }
+.preenchido .mdc-notched-outline > * { border-color: #f59e0b !important; }
+.preenchido { background: #fffbe6; border-radius: 6px; }
+.snack-erro { --mat-snack-bar-container-color: #7f1d1d; }
+
+@media (max-width: 760px) {
+  .pagina { padding: .6rem; }
+  .campos .largo { grid-column: auto; }
+  .grade-2 { grid-template-columns: 1fr; }
+  table.responsiva thead { display: none; }
+  table.responsiva tr { display: block; border: 1px solid var(--borda); border-radius: 10px; margin-bottom: .6rem; background: #fff; }
+  table.responsiva td { display: flex; justify-content: space-between; gap: 1rem; border: 0; text-align: right; }
+  table.responsiva td::before { content: attr(data-l); font-weight: 600; color: var(--suave); text-align: left; }
+}
+@media print { mat-toolbar, mat-sidenav, button { display: none !important; } }
+.mt { margin-top: .8rem; }

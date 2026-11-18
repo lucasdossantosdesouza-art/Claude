@@ -1,0 +1,254 @@
+<div class="pagina">
+  <h1>{{ editando() ? 'Editar OS ' + (os.codigo || id()) : 'Nova Ordem de Serviço' }}</h1>
+
+  @if (!editando()) {
+    <section class="cartao importar" [class.arrastando]="arrastando"
+             (dragover)="$event.preventDefault(); arrastando = true" (dragleave)="arrastando = false" (drop)="soltarArquivo($event)">
+      <h2><mat-icon>document_scanner</mat-icon> Preenchimento automático pelo documento da OS</h2>
+      <p class="suave">
+        Anexe a OS já emitida (PDF do SAFI, foto ou digitalização). O sistema lê cliente, produtos, valores, forma e
+        datas de pagamento e preenche o formulário para você conferir.
+        @if (capacidades(); as c) {
+          <br />
+          @if (c.ia) { <b>Leitura por IA ativa</b> — aceita layouts variados e fotos. }
+          @else { Leitor do layout SAFI{{ c.ocr ? ' + OCR para fotos' : '' }}. Configure a chave da IA para outros layouts. }
+        }
+      </p>
+      <input #arquivo type="file" accept=".pdf,image/*" hidden (change)="escolherArquivo($event)" />
+      <button mat-flat-button type="button" (click)="arquivo.click()" [disabled]="lendo()">
+        <mat-icon>upload_file</mat-icon> Anexar documento da OS
+      </button>
+      <span class="suave"> ou arraste o arquivo aqui</span>
+      @if (lendo()) {
+        <mat-progress-bar mode="indeterminate" class="mt" />
+        <p class="suave">Lendo documento…</p>
+      }
+      @if (erroImportacao()) {
+        <div class="alerta erro mt">{{ erroImportacao() }}</div>
+      }
+      @if (importacao(); as r) {
+        <div class="alerta ok mt">
+          <b>✔ Documento lido via {{ nomeMetodo(r.metodo) }}</b> — confiança {{ (r.confianca * 100).toFixed(0) }}%.
+          Os campos preenchidos estão destacados: <b>confira e ajuste antes de salvar</b>.
+          @for (a of r.avisos; track a) {
+            <div class="amarelo">⚠ {{ a }}</div>
+          }
+          @if (r.bloqueiosEntrega.length) {
+            <div class="vermelho">⛔ A previsão de entrega do documento tem produção bloqueada: {{ r.bloqueiosEntrega.join(', ') }}</div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <form (ngSubmit)="salvar()">
+    <section class="cartao">
+      <h2>Cabeçalho</h2>
+      <div class="campos">
+        <mat-form-field [class.preenchido]="marcado('codigo')">
+          <mat-label>Código da OS</mat-label>
+          <input matInput name="codigo" [(ngModel)]="os.codigo" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('dataEmissao')">
+          <mat-label>Data de emissão</mat-label>
+          <input matInput type="date" name="dataEmissao" [(ngModel)]="os.dataEmissao" required />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('hora')">
+          <mat-label>Hora</mat-label>
+          <input matInput type="time" name="hora" [(ngModel)]="os.hora" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('previsaoEntrega')">
+          <mat-label>Previsão de entrega</mat-label>
+          <input matInput type="date" name="previsaoEntrega" [(ngModel)]="os.previsaoEntrega" (change)="verificarEntrega()" />
+        </mat-form-field>
+        @if (auth.isGestor()) {
+          <mat-form-field>
+            <mat-label>Vendedor responsável</mat-label>
+            <mat-select name="vendedorId" [(ngModel)]="os.vendedorId" required>
+              @for (v of vendedores(); track v.id) {
+                <mat-option [value]="v.id">{{ v.nome }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+      <div class="disp">
+        @if (disponibilidade(); as d) {
+          @if (d.bloqueios.length) {
+            <span class="vermelho">⛔ Produção bloqueada nesta data: <b>{{ d.bloqueios.map(b => b.produto).join(', ') }}</b></span>
+          } @else {
+            <span class="verde">✔ Sem bloqueios de produção nesta data</span>
+          }
+          @for (a of d.avisos; track a.id) {
+            <span class="amarelo"> · ⚠ {{ a.texto }}</span>
+          }
+        }
+        <a routerLink="/calendario" target="_blank"> · abrir calendário</a>
+        <span class="suave"> · sugerir: </span>
+        <a (click)="sugerirEntrega(7)">+7 dias</a> · <a (click)="sugerirEntrega(10)">+10</a> · <a (click)="sugerirEntrega(15)">+15</a>
+      </div>
+      <mat-checkbox name="meiaMargem" [(ngModel)]="os.meiaMargem">
+        <b>Meia Margem</b> — comissão desta OS com metade do % da faixa do mês
+      </mat-checkbox>
+    </section>
+
+    <section class="cartao">
+      <h2>Dados do cliente</h2>
+      <div class="campos">
+        <div class="largo">
+          <mat-form-field [class.preenchido]="marcado('cliente.nome')">
+            <mat-label>Cliente (nome fantasia)</mat-label>
+            <input matInput name="clienteNome" [(ngModel)]="cliente.nome" (input)="buscarCliente()" required autocomplete="off" />
+          </mat-form-field>
+          @if (sugestoesClientes().length) {
+            <div class="sugestoes">
+              @for (c of sugestoesClientes(); track c.id) {
+                <a (click)="escolherCliente(c)">{{ c.nome }} @if (c.cnpj) { <span class="suave">— {{ c.cnpj }}</span> }</a>
+              }
+            </div>
+          }
+        </div>
+        <mat-form-field class="largo" [class.preenchido]="marcado('cliente.razaoSocial')">
+          <mat-label>Razão social</mat-label><input matInput name="razaoSocial" [(ngModel)]="cliente.razaoSocial" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.cnpj')">
+          <mat-label>CNPJ / CPF</mat-label><input matInput name="cnpj" [(ngModel)]="cliente.cnpj" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.codigo')">
+          <mat-label>Código do cliente</mat-label><input matInput name="codCliente" [(ngModel)]="cliente.codigo" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.conta')">
+          <mat-label>Nº Conta Cliente</mat-label><input matInput name="conta" [(ngModel)]="cliente.conta" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.telefone')">
+          <mat-label>Telefone</mat-label><input matInput name="telefone" [(ngModel)]="cliente.telefone" />
+        </mat-form-field>
+        <mat-form-field class="largo" [class.preenchido]="marcado('cliente.endereco')">
+          <mat-label>Endereço</mat-label><input matInput name="endereco" [(ngModel)]="cliente.endereco" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.numero')">
+          <mat-label>Número</mat-label><input matInput name="numero" [(ngModel)]="cliente.numero" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.bairro')">
+          <mat-label>Bairro</mat-label><input matInput name="bairro" [(ngModel)]="cliente.bairro" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.cidade')">
+          <mat-label>Cidade</mat-label><input matInput name="cidade" [(ngModel)]="cliente.cidade" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.uf')">
+          <mat-label>UF</mat-label><input matInput name="uf" maxlength="2" [(ngModel)]="cliente.uf" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('cliente.cep')">
+          <mat-label>CEP</mat-label><input matInput name="cep" [(ngModel)]="cliente.cep" />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Serviços a executar</h2>
+      <mat-form-field class="cheio" [class.preenchido]="marcado('servicos')">
+        <mat-label>Descrição do pedido, levantamento, medidas…</mat-label>
+        <textarea matInput rows="3" name="servicos" [(ngModel)]="os.servicos"></textarea>
+      </mat-form-field>
+    </section>
+
+    <section class="cartao">
+      <h2>Produtos / itens</h2>
+      <div class="tabela-wrap">
+        <table class="tabela itens">
+          <thead><tr><th>Tipo</th><th>Código</th><th>Descrição</th><th>Unid.</th><th>Qtde</th><th>Vlr. unit.</th><th>Desconto</th><th>Vlr. total</th><th></th></tr></thead>
+          <tbody>
+            @for (it of itens(); track $index; let i = $index) {
+              <tr [class.linha-alerta]="it.importado">
+                <td><select [(ngModel)]="it.tipo" [name]="'tipo' + i" (change)="recalcular()"><option value="PRODUTO">Produto</option><option value="SERVICO">Serviço</option></select></td>
+                <td><input [(ngModel)]="it.codigo" [name]="'cod' + i" class="w80" /></td>
+                <td><input [(ngModel)]="it.descricao" [name]="'desc' + i" class="w-desc" /></td>
+                <td><input [(ngModel)]="it.unidade" [name]="'un' + i" class="w60" /></td>
+                <td><input [(ngModel)]="it.quantidade" [name]="'qtd' + i" class="w70" (input)="calcularItem(it)" /></td>
+                <td><input [(ngModel)]="it.valorUnitario" [name]="'vu' + i" class="w100" (input)="calcularItem(it)" /></td>
+                <td><input [(ngModel)]="it.desconto" [name]="'dsc' + i" class="w90" (input)="calcularItem(it)" /></td>
+                <td><input [(ngModel)]="it.valorTotal" [name]="'vt' + i" class="w100" (input)="recalcular()" /></td>
+                <td><button mat-icon-button type="button" (click)="removerItem(i)" aria-label="Remover"><mat-icon>close</mat-icon></button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <button mat-stroked-button type="button" (click)="adicionarItem()"><mat-icon>add</mat-icon> Item</button>
+      <div class="grade mt">
+        <app-kpi rotulo="Total de produtos" [valor]="totalTipo('PRODUTO') | moeda" />
+        <app-kpi rotulo="Total de serviços" [valor]="totalTipo('SERVICO') | moeda" />
+        <mat-form-field [class.preenchido]="marcado('desconto')">
+          <mat-label>Desconto geral (R$)</mat-label>
+          <input matInput name="desconto" [(ngModel)]="os.desconto" (input)="recalcular()" inputmode="decimal" />
+        </mat-form-field>
+        <mat-form-field [class.preenchido]="marcado('total')">
+          <mat-label>Total do pedido / valor da venda (R$)</mat-label>
+          <input matInput name="total" [(ngModel)]="os.total" (input)="totalEditado()" required inputmode="decimal" />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Pagamento</h2>
+      <p class="suave">Cada parcela é um recebimento pendente da OS. É possível combinar formas (ex.: Pix + 2 boletos).</p>
+      <div class="campos">
+        <mat-form-field [class.preenchido]="marcado('prazoPagamentoDias')">
+          <mat-label>Prazo de pagamento (dias)</mat-label>
+          <input matInput type="number" name="prazo" [(ngModel)]="os.prazoPagamentoDias" />
+        </mat-form-field>
+      </div>
+      <div class="tabela-wrap">
+        <table class="tabela">
+          <thead><tr><th>Forma</th><th>Valor (R$)</th><th>Data de pagamento</th><th></th></tr></thead>
+          <tbody>
+            @for (p of parcelas(); track $index; let i = $index) {
+              <tr [class.linha-alerta]="p.importada" [class.recebida]="p.recebida">
+                <td>
+                  <select [(ngModel)]="p.forma" [name]="'forma' + i" [disabled]="p.recebida">
+                    @for (f of formas(); track f) { <option [value]="f">{{ f }}</option> }
+                    @if (!formas().includes(p.forma)) { <option [value]="p.forma">{{ p.forma }}</option> }
+                  </select>
+                </td>
+                <td><input [(ngModel)]="p.valor" [name]="'pv' + i" [readonly]="p.recebida" inputmode="decimal" class="w120" /></td>
+                <td><input type="date" [(ngModel)]="p.vencimento" [name]="'pd' + i" [readonly]="p.recebida" /></td>
+                <td>
+                  @if (p.recebida) { <span class="badge RECEBIDA">recebida</span> }
+                  @else { <button mat-icon-button type="button" (click)="removerParcela(i)" aria-label="Remover"><mat-icon>close</mat-icon></button> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="linha mt">
+        <button mat-stroked-button type="button" (click)="adicionarParcela()"><mat-icon>add</mat-icon> Parcela</button>
+        <span class="suave">Dividir o total em</span>
+        <select #n><option>1</option><option>2</option><option selected>3</option><option>4</option><option>6</option><option>10</option><option>12</option></select>
+        <span class="suave">× a cada</span>
+        <select #iv><option value="7">7</option><option value="15">15</option><option value="30" selected>30</option></select>
+        <span class="suave">dias em</span>
+        <select #fm>@for (f of formas(); track f) { <option [selected]="f === 'Boleto'">{{ f }}</option> }</select>
+        <button mat-stroked-button type="button" (click)="dividir(+n.value, +iv.value, fm.value)">Gerar parcelas</button>
+      </div>
+      <p>
+        Soma das parcelas: <b>{{ somaParcelas() | moeda }}</b>
+        @if (diferenca() === 0) { <span class="verde">✔ confere com o total</span> }
+        @else { <span class="vermelho">(diferença de {{ diferenca() | moeda }})</span> }
+      </p>
+    </section>
+
+    <section class="cartao">
+      <h2>Observações gerais</h2>
+      <mat-form-field class="cheio" [class.preenchido]="marcado('observacoes')">
+        <mat-label>Observações</mat-label>
+        <textarea matInput rows="2" name="observacoes" [(ngModel)]="os.observacoes"></textarea>
+      </mat-form-field>
+    </section>
+
+    <div class="linha acoes-fixas">
+      <button mat-flat-button type="submit" [disabled]="salvando()"><mat-icon>save</mat-icon> Salvar OS</button>
+      <a mat-button [routerLink]="editando() ? ['/os', id()] : ['/os']">Cancelar</a>
+    </div>
+  </form>
+</div>

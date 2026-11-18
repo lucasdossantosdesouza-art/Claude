@@ -1,0 +1,182 @@
+<div class="pagina">
+  @if (os(); as o) {
+    <div class="linha entre">
+      <h1>
+        OS {{ o.codigo || o.id }}
+        <span class="badge {{ o.situacao }}">{{ o.situacao }}</span>
+        @if (o.meiaMargem) { <span class="badge meia">Meia Margem</span> }
+      </h1>
+      <div class="linha">
+        @if (podeEditar()) { <a mat-stroked-button [routerLink]="['/os', o.id, 'editar']"><mat-icon>edit</mat-icon> Editar</a> }
+        @if (o.documentoOrigem) { <button mat-stroked-button (click)="arquivos.abrir(o.documentoOrigem)"><mat-icon>description</mat-icon> Documento de origem</button> }
+        <button mat-stroked-button (click)="window.print()"><mat-icon>print</mat-icon> Imprimir</button>
+      </div>
+    </div>
+
+    @for (a of o.avisos; track a.id) {
+      <div class="alerta">@if (a.urgente) { <b>URGENTE:</b> } {{ a.texto }}</div>
+    }
+    @if (o.bloqueiosNaEntrega.length) {
+      <div class="alerta erro">⛔ Produção bloqueada na data de entrega ({{ o.previsaoEntrega | dataBr }}): {{ o.bloqueiosNaEntrega.join(', ') }}</div>
+    }
+    @if (o.situacao === 'CANCELADA') {
+      <div class="alerta erro">
+        <b>Cancelada em {{ o.cancelData | dataBr }}.</b> Motivo: {{ o.cancelMotivo }}
+        @if (o.estorno) {
+          <br />Estorno de {{ o.estornoValor | moeda }} — {{ o.estornoMotivo }}
+          @if (o.estornoComprovante) { · <a (click)="arquivos.abrir(o.estornoComprovante)">comprovante do estorno</a> }
+        }
+      </div>
+    }
+
+    <div class="grade">
+      <app-kpi rotulo="Total do pedido" [valor]="o.total | moeda"
+               [sub]="'Produtos ' + (o.totalProdutos | moeda) + ' · Serviços ' + (o.totalServicos | moeda) + ' · Desc. ' + (o.desconto | moeda)" />
+      <app-kpi rotulo="Recebido" [valor]="o.recebido | moeda" [sub]="'Em aberto: ' + ((o.total - o.recebido) | moeda)" />
+      @if (o.comissao; as c) {
+        <app-kpi rotulo="Comissão a pagar ao vendedor" [valor]="c.aPagar | moeda" [destaque]="true"
+                 [sub]="'Pendente de recebimento: ' + (c.pendente | moeda) + ' · Já paga: ' + (c.paga | moeda)" />
+        <app-kpi rotulo="% aplicado nesta OS" [valor]="c.percentualAplicado | pct"
+                 [sub]="'Faixa de ' + c.faixaDoMes.mes + ': ' + (c.faixaDoMes.percentual | pct) + (c.faixaTravada ? ' (travada)' : ' (provisória até o fechamento)') + (o.meiaMargem ? ' × meia margem' : '')" />
+      }
+    </div>
+
+    <div class="grade-2">
+      <section class="cartao">
+        <h2>Cabeçalho</h2>
+        <p>Emissão: <b>{{ o.dataEmissao | dataBr }}</b> {{ o.hora }} · Previsão de entrega: <b>{{ (o.previsaoEntrega | dataBr) || '—' }}</b><br />
+          Vendedor: <b>{{ o.vendedor }}</b> · Prazo de pagamento: {{ o.prazoPagamentoDias ?? '—' }} dias</p>
+        @if (o.servicos) { <h3>Serviços a executar</h3><p class="pre">{{ o.servicos }}</p> }
+        @if (o.observacoes) { <h3>Observações</h3><p class="pre">{{ o.observacoes }}</p> }
+      </section>
+      <section class="cartao">
+        <h2>Cliente — <a [routerLink]="['/clientes', o.cliente.id]">{{ o.cliente.nome }}</a></h2>
+        <p>{{ o.cliente.razaoSocial }}<br />
+          CNPJ/CPF: {{ o.cliente.cnpj || '—' }} · Cód.: {{ o.cliente.codigo || '—' }} · Conta: {{ o.cliente.conta || '—' }}<br />
+          Tel.: {{ o.cliente.telefone || '—' }}<br />
+          {{ o.cliente.endereco }}@if (o.cliente.numero) {, {{ o.cliente.numero }}} @if (o.cliente.bairro) { — {{ o.cliente.bairro }} }<br />
+          {{ o.cliente.cidade }}@if (o.cliente.uf) {/{{ o.cliente.uf }}} {{ o.cliente.cep }}</p>
+        <a [routerLink]="['/clientes', o.cliente.id]">Histórico de compras e pós-venda →</a>
+      </section>
+    </div>
+
+    <section class="cartao tabela-wrap">
+      <h2>Itens</h2>
+      <table class="tabela responsiva">
+        <thead><tr><th>Tipo</th><th>Código</th><th>Descrição</th><th>Unid.</th><th class="num">Qtde</th><th class="num">Vlr. unit.</th><th class="num">Desc.</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          @for (i of o.itens; track i.id) {
+            <tr><td>{{ i.tipo === 'SERVICO' ? 'Serviço' : 'Produto' }}</td><td>{{ i.codigo }}</td><td>{{ i.descricao }}</td><td>{{ i.unidade }}</td>
+              <td class="num">{{ i.quantidade }}</td><td class="num">{{ i.valorUnitario | moeda }}</td><td class="num">{{ i.desconto | moeda }}</td><td class="num">{{ i.valorTotal | moeda }}</td></tr>
+          } @empty { <tr><td colspan="8" class="suave">Sem itens detalhados.</td></tr> }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cartao tabela-wrap">
+      <h2>Parcelas / recebimentos</h2>
+      @if (ocupado()) { <mat-progress-bar mode="indeterminate" /> }
+      <table class="tabela responsiva">
+        <thead><tr><th>#</th><th>Forma</th><th>Vencimento</th><th class="num">Valor</th><th>Status</th>
+          @if (!auth.isProducao()) { <th class="num">Comissão</th> }<th>Comprovante / ação</th></tr></thead>
+        <tbody>
+          @for (p of o.parcelas; track p.id) {
+            <tr [class.linha-vermelha]="p.atrasada">
+              <td>{{ p.numero }}</td><td>{{ p.forma }}</td>
+              <td>{{ p.vencimento | dataBr }} @if (p.atrasada) { <b class="vermelho">atrasada</b> }</td>
+              <td class="num">{{ p.valor | moeda }}</td>
+              <td><span class="badge {{ p.status }}">{{ p.status }}</span>@if (p.dataRecebimento) { <br /><span class="suave">{{ p.dataRecebimento | dataBr }}</span> }</td>
+              @if (!auth.isProducao()) {
+                <td class="num">
+                  <b [class.vermelho]="p.statusComissao === 'AUTORIZADA' || p.statusComissao === 'PROVISORIA'">{{ p.comissao | moeda }}</b><br />
+                  <span class="badge {{ p.statusComissao }}">{{ p.statusComissao | statusComissao }}</span>
+                </td>
+              }
+              <td>
+                @if (p.comprovante) {
+                  <a (click)="arquivos.abrir(p.comprovante)"><mat-icon inline>attach_file</mat-icon> ver comprovante</a>
+                  @if (auth.isGestor() && p.statusComissao !== 'PAGA') {
+                    <button mat-button (click)="desfazer(p.id)">desfazer</button>
+                  }
+                } @else if (p.status === 'PENDENTE' && podeEditar()) {
+                  <div class="receber">
+                    <input type="date" [(ngModel)]="datasRecebimento[p.id]" [ngModelOptions]="{ standalone: true }" [placeholder]="hoje" />
+                    <input type="file" accept=".pdf,image/*" (change)="arquivoEscolhido(p.id, $event)" />
+                    <button mat-flat-button (click)="receber(p.id)" [disabled]="ocupado()"><mat-icon>check</mat-icon> Registrar recebimento</button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cartao" id="posvenda">
+      <h2>Pós-venda</h2>
+      @if (o.entregue) {
+        <p class="verde">✔ Entregue/retirado em <b>{{ o.dataEntregaReal | dataBr }}</b>
+          @if (o.previsaoEntrega) { — prometido para {{ o.previsaoEntrega | dataBr }}
+            @if (o.dataEntregaReal! > o.previsaoEntrega) { <b class="vermelho">(com atraso)</b> } @else { (no prazo) }
+          }
+        </p>
+      } @else if (o.situacao !== 'CANCELADA') {
+        <div class="linha">
+          <mat-form-field><mat-label>Data real da entrega/retirada</mat-label>
+            <input matInput type="date" [(ngModel)]="dataEntrega" [ngModelOptions]="{ standalone: true }" /></mat-form-field>
+          <button mat-flat-button (click)="confirmarEntrega()"><mat-icon>local_shipping</mat-icon> Confirmar entrega</button>
+        </div>
+      }
+      <h3>Problemas / reclamações</h3>
+      @for (oc of o.ocorrencias; track oc.id) {
+        <p><span class="badge {{ oc.status }}">{{ oc.status }}</span> <b>{{ oc.tipo }}</b> — {{ oc.descricao }}
+          <span class="suave">· {{ oc.usuario }} em {{ oc.criadoEm | dataBr }}</span>
+          @if (oc.status === 'ABERTA') { <button mat-button (click)="resolver(oc.id)">marcar resolvida</button> }</p>
+      } @empty { <p class="suave">Nenhuma ocorrência.</p> }
+      <div class="linha">
+        <mat-form-field><mat-label>Tipo</mat-label>
+          <mat-select [(ngModel)]="ocorrencia.tipo" [ngModelOptions]="{ standalone: true }">
+            @for (t of tiposOcorrencia; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+          </mat-select></mat-form-field>
+        <mat-form-field style="flex: 1 1 300px"><mat-label>Descrição</mat-label>
+          <input matInput [(ngModel)]="ocorrencia.descricao" [ngModelOptions]="{ standalone: true }" /></mat-form-field>
+        <button mat-stroked-button (click)="registrarOcorrencia()">Registrar ocorrência</button>
+      </div>
+    </section>
+
+    @if (podeEditar()) {
+      <section class="cartao">
+        <h2>Cancelar venda / estorno</h2>
+        <mat-form-field class="cheio"><mat-label>Justificativa do cancelamento (obrigatória)</mat-label>
+          <textarea matInput rows="2" [(ngModel)]="cancelamento.motivo" [ngModelOptions]="{ standalone: true }"></textarea></mat-form-field>
+        <mat-checkbox [(ngModel)]="cancelamento.estorno" [ngModelOptions]="{ standalone: true }">Houve estorno de valor ao cliente</mat-checkbox>
+        @if (cancelamento.estorno) {
+          <div class="campos">
+            <mat-form-field><mat-label>Motivo do estorno</mat-label>
+              <mat-select [(ngModel)]="cancelamento.motivoEstornoId" [ngModelOptions]="{ standalone: true }">
+                @for (m of motivos(); track m.id) { <mat-option [value]="m.id">{{ m.nome }}</mat-option> }
+              </mat-select></mat-form-field>
+            <mat-form-field><mat-label>Valor estornado (R$)</mat-label>
+              <input matInput [(ngModel)]="cancelamento.valorEstorno" [ngModelOptions]="{ standalone: true }" /></mat-form-field>
+            <div><label class="suave">Comprovante do estorno</label><br /><input type="file" accept=".pdf,image/*" (change)="escolherComprovanteEstorno($event)" /></div>
+          </div>
+        }
+        <div><button mat-flat-button color="warn" class="perigo" (click)="cancelar()"><mat-icon>block</mat-icon> Cancelar OS</button></div>
+      </section>
+    }
+
+    <section class="cartao tabela-wrap">
+      <h2>Histórico de alterações</h2>
+      <table class="tabela responsiva">
+        <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead>
+        <tbody>
+          @for (l of o.historico; track l.id) {
+            <tr><td>{{ l.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</td><td>{{ l.usuario }}</td><td>{{ l.acao }}</td><td>{{ l.detalhe }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  } @else {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</div>

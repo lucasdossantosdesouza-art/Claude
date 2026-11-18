@@ -1,0 +1,19 @@
+:host { display: flex; flex-direction: column; height: 100vh; }
+.topo { background: var(--azul); color: #fff; position: sticky; top: 0; z-index: 10; gap: .5rem; }
+.topo a, .topo button { color: #fff; }
+.marca { font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+.espaco { flex: 1; }
+.busca { display: flex; align-items: center; background: rgba(255,255,255,.15); border-radius: 8px; padding: 0 .5rem; }
+.busca input { background: transparent; border: 0; color: #fff; padding: .45rem; width: 200px; font: inherit; outline: none; }
+.busca input::placeholder { color: rgba(255,255,255,.75); }
+.usuario span { margin-left: .3rem; }
+.perfil-info { padding: .6rem 1rem; font-weight: 500; border-bottom: 1px solid #eee; }
+.faixa-urgente { background: #fde68a; color: #7c2d12; padding: .4rem 1rem; font-size: .9rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.container { flex: 1; }
+.lateral { width: 240px; border-right: 1px solid var(--borda); }
+.ativo { background: rgba(46,117,182,.12); font-weight: 600; }
+@media (max-width: 900px) {
+  .topo { padding: 0 .4rem; gap: .2rem; }
+  .marca { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; }
+  .usuario { min-width: 0; padding: 0 .4rem; }
+}

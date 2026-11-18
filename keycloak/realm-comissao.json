@@ -1,0 +1,162 @@
+{
+  "realm": "comissao",
+  "enabled": true,
+  "displayName": "Comissão & Contas a Receber",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "bruteForceProtected": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "pt-BR"
+  ],
+  "defaultLocale": "pt-BR",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 43200,
+  "ssoSessionMaxLifespan": 86400,
+  "roles": {
+    "realm": [
+      {
+        "name": "VENDEDOR",
+        "description": "Cria e acompanha as próprias Ordens de Serviço"
+      },
+      {
+        "name": "GESTOR",
+        "description": "Gestora / Administradora financeira"
+      },
+      {
+        "name": "PRODUCAO",
+        "description": "Chefe de Produção: calendário e avisos"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "comissao-web",
+      "name": "Portal Comissão (Angular)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://localhost:8081"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:8081/*"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "gestor",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Administradora",
+      "lastName": "Financeira",
+      "email": "gestor@empresa.local",
+      "realmRoles": [
+        "GESTOR"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "gestor123",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "producao",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Chefe",
+      "lastName": "de Produção",
+      "email": "producao@empresa.local",
+      "realmRoles": [
+        "PRODUCAO"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "producao123",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "vendedor",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Vendedor",
+      "lastName": "Demo",
+      "email": "vendedor@empresa.local",
+      "realmRoles": [
+        "VENDEDOR"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "vendedor123",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carla",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Carla",
+      "lastName": "Souza",
+      "email": "carla@empresa.local",
+      "realmRoles": [
+        "VENDEDOR"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "vendedor123",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "diego",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Diego",
+      "lastName": "Lima",
+      "email": "diego@empresa.local",
+      "realmRoles": [
+        "VENDEDOR"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "vendedor123",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

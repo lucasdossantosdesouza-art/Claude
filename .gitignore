@@ -1,0 +1,15 @@
+# Java / Maven
+backend/target/
+backend/storage/
+*.class
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+# IDEs / SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+# Segredos locais
+.env
