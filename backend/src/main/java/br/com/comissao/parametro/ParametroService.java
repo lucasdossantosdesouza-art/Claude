@@ -5,20 +5,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.YearMonth;
 import java.util.List;
 
-/** Acesso tipado aos parâmetros configuráveis das regras de negócio. */
+/**
+ * Acesso tipado aos parâmetros das regras de negócio, sempre pela vigência:
+ * o valor usado em um mês é o da versão mais recente com "vigente desde" ≤ mês.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ParametroService {
 
-    private final ParametroRepository parametros;
+    private final ParametroVigenciaRepository vigencias;
     private final FaixaComissaoRepository faixasComissao;
     private final FaixaMetaSemanalRepository faixasMeta;
+    private final Clock clock;
 
+    public BigDecimal valor(ChaveParametro chave, YearMonth mes) {
+        return vigencias.findFirstByChaveAndVigenteDesdeLessThanEqualOrderByVigenteDesdeDesc(chave, mes.toString())
+                .map(ParametroVigencia::getValor).orElse(BigDecimal.ZERO);
+    }
+
+    /** Valor vigente no mês atual. */
     public BigDecimal valor(ChaveParametro chave) {
-        return parametros.findById(chave).map(Parametro::getValor).orElse(BigDecimal.ZERO);
+        return valor(chave, YearMonth.now(clock));
     }
 
     public int inteiro(ChaveParametro chave) {
@@ -29,11 +41,13 @@ public class ParametroService {
         return valor(chave).compareTo(BigDecimal.ONE) >= 0;
     }
 
-    public List<FaixaComissao> faixasComissao() {
-        return faixasComissao.findAllByOrderByValorMinimo();
+    public List<FaixaComissao> faixasComissao(YearMonth mes) {
+        String v = faixasComissao.vigenciaEm(mes.toString());
+        return v == null ? List.of() : faixasComissao.findByVigenteDesdeOrderByValorMinimo(v);
     }
 
-    public List<FaixaMetaSemanal> faixasMetaSemanal() {
-        return faixasMeta.findAllByOrderByValorMinimo();
+    public List<FaixaMetaSemanal> faixasMetaSemanal(YearMonth mes) {
+        String v = faixasMeta.vigenciaEm(mes.toString());
+        return v == null ? List.of() : faixasMeta.findByVigenteDesdeOrderByValorMinimo(v);
     }
 }

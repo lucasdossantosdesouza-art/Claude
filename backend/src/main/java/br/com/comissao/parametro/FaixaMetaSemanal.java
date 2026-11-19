@@ -19,9 +19,14 @@ public class FaixaMetaSemanal {
     private Long id;
     private BigDecimal valorMinimo;
     private BigDecimal bonus;
+    /** Mês (AAAA-MM) a partir do qual este conjunto de faixas vale. */
+    private String vigenteDesde;
+    private String registradoPor;
 
-    public FaixaMetaSemanal(BigDecimal valorMinimo, BigDecimal bonus) {
+    public FaixaMetaSemanal(BigDecimal valorMinimo, BigDecimal bonus, String vigenteDesde, String registradoPor) {
         this.valorMinimo = valorMinimo;
         this.bonus = bonus;
+        this.vigenteDesde = vigenteDesde;
+        this.registradoPor = registradoPor;
     }
 }

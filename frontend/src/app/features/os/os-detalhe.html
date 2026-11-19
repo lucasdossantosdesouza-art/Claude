@@ -136,7 +136,7 @@
       <div class="linha">
         <mat-form-field><mat-label>Tipo</mat-label>
           <mat-select [(ngModel)]="ocorrencia.tipo" [ngModelOptions]="{ standalone: true }">
-            @for (t of tiposOcorrencia; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+            @for (t of tiposOcorrencia(); track t) { <mat-option [value]="t">{{ t }}</mat-option> }
           </mat-select></mat-form-field>
         <mat-form-field style="flex: 1 1 300px"><mat-label>Descrição</mat-label>
           <input matInput [(ngModel)]="ocorrencia.descricao" [ngModelOptions]="{ standalone: true }" /></mat-form-field>

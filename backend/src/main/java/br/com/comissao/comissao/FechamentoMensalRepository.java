@@ -12,6 +12,9 @@ public interface FechamentoMensalRepository extends JpaRepository<FechamentoMens
 
     boolean existsByMesRef(String mesRef);
 
+    @Query("select max(f.mesRef) from FechamentoMensal f")
+    String ultimoMesFechado();
+
     @Query("select f from FechamentoMensal f join fetch f.vendedor order by f.mesRef desc, f.vendedor.nome")
     List<FechamentoMensal> historico();
 }

@@ -19,9 +19,14 @@ public class FaixaComissao {
     private Long id;
     private BigDecimal valorMinimo;
     private BigDecimal percentual;
+    /** Mês (AAAA-MM) a partir do qual este conjunto de faixas vale. */
+    private String vigenteDesde;
+    private String registradoPor;
 
-    public FaixaComissao(BigDecimal valorMinimo, BigDecimal percentual) {
+    public FaixaComissao(BigDecimal valorMinimo, BigDecimal percentual, String vigenteDesde, String registradoPor) {
         this.valorMinimo = valorMinimo;
         this.percentual = percentual;
+        this.vigenteDesde = vigenteDesde;
+        this.registradoPor = registradoPor;
     }
 }

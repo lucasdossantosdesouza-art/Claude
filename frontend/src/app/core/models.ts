@@ -455,8 +455,12 @@ export type ChaveParametro = string;
 export interface Parametro {
   chave: ChaveParametro;
   valor: number;
+  vigenteDesde: string | null;
   descricao: string;
   tipo: 'MOEDA' | 'PERCENTUAL' | 'NUMERO' | 'DIAS' | 'BOOLEANO';
+  grupo: string;
+  origem: string | null;
+  valorDocumento: number | null;
 }
 
 export interface Faixa {
@@ -470,12 +474,41 @@ export interface ItemLista {
   ativo: boolean;
 }
 
+export interface TabelaFaixas {
+  vigenteDesde: string | null;
+  faixas: Faixa[];
+  documento: Faixa[];
+}
+
 export interface Configuracao {
+  mes: string;
+  mesAtual: string;
+  primeiroMesEditavel: string;
   gerais: Parametro[];
-  faixasComissao: Faixa[];
-  faixasMetaSemanal: Faixa[];
+  faixasComissao: TabelaFaixas;
+  faixasMetaSemanal: TabelaFaixas;
   formasPagamento: ItemLista[];
   motivosEstorno: ItemLista[];
   produtosProducao: ItemLista[];
+  tiposOcorrencia: ItemLista[];
   iaConfigurada: boolean;
+}
+
+export interface ResultadoParametrizacao {
+  alteracoes: string[];
+  configuracao: Configuracao;
+}
+
+export interface AlteracaoVigencia {
+  mes: string;
+  situacao: 'AGENDADA' | 'VIGENTE' | 'HISTORICA';
+  alteracoes: string[];
+  registradoPor: string | null;
+  registradoEm: string | null;
+  removivel: boolean;
+}
+
+/** Valor vigente de um parâmetro (com padrão caso não exista). */
+export function parametro(c: Configuracao | null, chave: string, padrao = 0): number {
+  return c?.gerais.find((p) => p.chave === chave)?.valor ?? padrao;
 }

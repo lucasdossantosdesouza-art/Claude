@@ -68,7 +68,7 @@ public class ComissaoConsultaService {
         BigDecimal bonus = metas.semanasDoMes(v.getId(), mes).stream().map(MetaSemanalService.MetaSemanal::bonus)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new ResumoVendedor(v.getId(), v.getNome(), f.totalVendido(), f.percentual(), f.travado(), f.regra(),
-                parametros.valor(ChaveParametro.SALARIO_FIXO), tot.get(StatusComissao.AUTORIZADA),
+                parametros.valor(ChaveParametro.SALARIO_FIXO, mes), tot.get(StatusComissao.AUTORIZADA),
                 tot.get(StatusComissao.PROVISORIA), tot.get(StatusComissao.PAGA),
                 tot.get(StatusComissao.PENDENTE_RECEBIMENTO), bonus);
     }

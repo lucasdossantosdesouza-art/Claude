@@ -101,10 +101,17 @@ export class Api {
   auditoria = (q: string) => this.get<M.LogAlteracao[]>('/auditoria', { q });
 
   // parametrização
-  configuracao = () => this.get<M.Configuracao>('/parametros');
-  salvarParametros = (valores: Record<string, number>) => this.http.put<M.Configuracao>(`${this.base}/parametros/gerais`, valores);
-  salvarFaixasComissao = (f: M.Faixa[]) => this.http.put<M.Configuracao>(`${this.base}/parametros/faixas-comissao`, f);
-  salvarFaixasMeta = (f: M.Faixa[]) => this.http.put<M.Configuracao>(`${this.base}/parametros/faixas-meta-semanal`, f);
+  configuracao = (mes?: string) => this.get<M.Configuracao>('/parametros', { mes });
+  salvarParametros = (vigenteDesde: string, valores: Record<string, number>) =>
+    this.http.put<M.ResultadoParametrizacao>(`${this.base}/parametros/gerais`, { vigenteDesde, valores });
+  salvarFaixasComissao = (vigenteDesde: string, faixas: M.Faixa[]) =>
+    this.http.put<M.ResultadoParametrizacao>(`${this.base}/parametros/faixas-comissao`, { vigenteDesde, faixas });
+  salvarFaixasMeta = (vigenteDesde: string, faixas: M.Faixa[]) =>
+    this.http.put<M.ResultadoParametrizacao>(`${this.base}/parametros/faixas-meta-semanal`, { vigenteDesde, faixas });
+  restaurarDocumento = (vigenteDesde: string) =>
+    this.http.post<M.ResultadoParametrizacao>(`${this.base}/parametros/restauracao-documento`, { vigenteDesde });
+  vigencias = () => this.get<M.AlteracaoVigencia[]>('/parametros/vigencias');
+  excluirVigencia = (mes: string) => this.http.delete<M.AlteracaoVigencia[]>(`${this.base}/parametros/vigencias/${mes}`);
   adicionarItemLista = (lista: string, nome: string) => this.http.post<M.Configuracao>(`${this.base}/parametros/${lista}`, { nome });
   ativarItemLista = (lista: string, id: number, ativo: boolean) =>
     this.http.patch<M.Configuracao>(`${this.base}/parametros/${lista}/${id}`, { ativo });

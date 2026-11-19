@@ -84,8 +84,8 @@
           }
         }
         <a routerLink="/calendario" target="_blank"> · abrir calendário</a>
-        <span class="suave"> · sugerir: </span>
-        <a (click)="sugerirEntrega(7)">+7 dias</a> · <a (click)="sugerirEntrega(10)">+10</a> · <a (click)="sugerirEntrega(15)">+15</a>
+        <span class="suave"> · </span>
+        <a (click)="sugerirEntrega(prazoEntrega())">sugerir prazo padrão (+{{ prazoEntrega() }} dias)</a>
       </div>
       <mat-checkbox name="meiaMargem" [(ngModel)]="os.meiaMargem">
         <b>Meia Margem</b> — comissão desta OS com metade do % da faixa do mês
@@ -226,7 +226,7 @@
         <span class="suave">Dividir o total em</span>
         <select #n><option>1</option><option>2</option><option selected>3</option><option>4</option><option>6</option><option>10</option><option>12</option></select>
         <span class="suave">× a cada</span>
-        <select #iv><option value="7">7</option><option value="15">15</option><option value="30" selected>30</option></select>
+        <input #iv type="number" min="1" [value]="intervaloParcelas()" class="w70" />
         <span class="suave">dias em</span>
         <select #fm>@for (f of formas(); track f) { <option [selected]="f === 'Boleto'">{{ f }}</option> }</select>
         <button mat-stroked-button type="button" (click)="dividir(+n.value, +iv.value, fm.value)">Gerar parcelas</button>

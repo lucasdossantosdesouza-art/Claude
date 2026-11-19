@@ -55,7 +55,7 @@ public class MetaSemanalService {
         BigDecimal total = nz(ordens.totalVendido(vendedorId, inicio, fim));
         BigDecimal bonus = BigDecimal.ZERO;
         FaixaMetaSemanal proxima = null;
-        for (FaixaMetaSemanal f : parametros.faixasMetaSemanal()) {
+        for (FaixaMetaSemanal f : parametros.faixasMetaSemanal(YearMonth.from(inicio))) {
             if (total.compareTo(f.getValorMinimo()) >= 0) {
                 bonus = f.getBonus();
             } else if (proxima == null) {

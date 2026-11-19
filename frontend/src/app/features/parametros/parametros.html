@@ -1,35 +1,77 @@
 <div class="pagina">
-  <h1>Parametrização</h1>
-  <p class="suave">Valores, percentuais e prazos das regras de negócio. Alterações valem para os meses ainda não fechados — meses
-    fechados mantêm a faixa travada.</p>
+  <h1>Parametrização das regras</h1>
   @if (cfg(); as c) {
-    <section class="cartao">
-      <h2>Parâmetros gerais</h2>
-      <div class="campos">
-        @for (p of c.gerais; track p.chave) {
-          @if (p.tipo === 'BOOLEANO') {
-            <div class="param-bool">
-              <mat-slide-toggle [(ngModel)]="gerais[p.chave]">{{ p.descricao }}</mat-slide-toggle>
-              @if (p.chave === 'LEITURA_IA_HABILITADA') {
-                <span class="suave">{{ c.iaConfigurada ? 'Chave da IA configurada no servidor ✔' : 'Sem chave da IA (ANTHROPIC_API_KEY): usando leitor SAFI + OCR' }}</span>
-              }
-            </div>
-          } @else {
-            <mat-form-field>
-              <mat-label>{{ p.descricao }}</mat-label>
-              <input matInput [(ngModel)]="gerais[p.chave]" inputmode="decimal" />
-              <span matTextSuffix>&nbsp;{{ sufixo(p) }}</span>
-            </mat-form-field>
-          }
-        }
+    <section class="cartao vigencia">
+      <div class="linha">
+        <mat-form-field>
+          <mat-label>Ver regras vigentes em</mat-label>
+          <input matInput type="month" [(ngModel)]="mesConsulta" (change)="carregar(mesConsulta)" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Aplicar alterações a partir de</mat-label>
+          <input matInput type="month" [(ngModel)]="vigencia" [min]="c.primeiroMesEditavel" />
+          <mat-hint>a partir de {{ mesBr(c.primeiroMesEditavel) }}</mat-hint>
+        </mat-form-field>
+        <button mat-stroked-button (click)="restaurarDocumento()"><mat-icon>restart_alt</mat-icon> Restaurar valores do documento</button>
       </div>
-      <button mat-flat-button (click)="salvarGerais()"><mat-icon>save</mat-icon> Salvar parâmetros</button>
+      <p class="suave">
+        Os valores iniciais são os do <b>documento de requisitos</b>. Cada alteração vale <b>a partir do mês escolhido</b>:
+        os meses anteriores continuam calculados com as regras da época. Para programar uma regra futura, escolha um mês à frente
+        (ex.: novas faixas a partir de janeiro). Meses já fechados não podem ser alterados.
+        @if (vigencia > c.mesAtual) { <br /><b class="amarelo">As alterações ficarão agendadas para {{ mesBr(vigencia) }}.</b> }
+      </p>
     </section>
+
+    @for (g of grupos(); track g.nome) {
+      <section class="cartao">
+        <h2>{{ g.nome }}</h2>
+        <div class="params">
+          @for (p of g.itens; track p.chave) {
+            <div class="param">
+              @if (p.tipo === 'BOOLEANO') {
+                <mat-slide-toggle [(ngModel)]="gerais[p.chave]">{{ p.descricao }}</mat-slide-toggle>
+                @if (p.chave === 'LEITURA_IA_HABILITADA') {
+                  <div class="suave">{{ c.iaConfigurada ? 'Chave da IA configurada no servidor ✔' : 'Sem chave da IA (ANTHROPIC_API_KEY): usando leitor SAFI + OCR' }}</div>
+                }
+              } @else {
+                <label class="desc" [attr.for]="p.chave">{{ p.descricao }}</label>
+                <mat-form-field class="cheio">
+                  <!-- um único elemento por bloco: necessário para a projeção de conteúdo do mat-form-field -->
+                  @if (p.chave === 'DIA_INICIO_SEMANA') {
+                    <mat-select [id]="p.chave" [(ngModel)]="gerais[p.chave]">
+                      @for (d of diasSemana; track $index) { <mat-option [value]="$index + 1">{{ d }}</mat-option> }
+                    </mat-select>
+                  }
+                  @if (p.chave !== 'DIA_INICIO_SEMANA') {
+                    <input matInput [id]="p.chave" [(ngModel)]="gerais[p.chave]" inputmode="decimal" />
+                  }
+                  @if (sufixo(p) && p.chave !== 'DIA_INICIO_SEMANA') {
+                    <span matTextSuffix>&nbsp;{{ sufixo(p) }}</span>
+                  }
+                </mat-form-field>
+              }
+              <div class="ref">
+                @if (p.valorDocumento !== null) {
+                  <span>Documento: <b>{{ formatar(p, p.valorDocumento) }}</b></span>
+                  @if (difereDoDocumento(p)) { <span class="badge PROVISORIA">alterado</span> }
+                }
+                @if (p.vigenteDesde && p.vigenteDesde !== '2000-01') { <span>· vigente desde {{ mesBr(p.vigenteDesde) }}</span> }
+                @if (p.origem) { <div class="origem">{{ p.origem }}</div> }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+    <div class="linha acoes">
+      <button mat-flat-button (click)="salvarGerais()"><mat-icon>save</mat-icon> Salvar parâmetros a partir de {{ mesBr(vigencia) }}</button>
+    </div>
 
     <div class="grade-2">
       <section class="cartao faixas">
         <h2>Faixas de comissão mensal</h2>
-        <p class="suave">Total vendido no mês (a partir de) → % sobre as vendas.</p>
+        <p class="suave">Total vendido no mês (a partir de) → % sobre as vendas.
+          @if (c.faixasComissao.vigenteDesde && c.faixasComissao.vigenteDesde !== '2000-01') { Vigente desde {{ mesBr(c.faixasComissao.vigenteDesde) }}. }</p>
         <table class="tabela">
           <thead><tr><th>A partir de (R$)</th><th>%</th><th></th></tr></thead>
           <tbody>@for (f of faixasComissao; track $index; let i = $index) {
@@ -37,14 +79,20 @@
               <td><button mat-icon-button (click)="faixasComissao.splice(i, 1)" aria-label="Remover"><mat-icon>close</mat-icon></button></td></tr>
           }</tbody>
         </table>
+        <div class="ref">Documento (item 3.1):
+          @for (d of c.faixasComissao.documento; track d.valorMinimo) { <b>{{ d.valorMinimo | moeda }} → {{ d.valor | pct }}</b>{{ $last ? '' : ' · ' }} }
+          @if (faixasDiferentes(c.faixasComissao.faixas, c.faixasComissao.documento)) { <span class="badge PROVISORIA">alterado</span> }
+        </div>
         <div class="linha mt">
           <button mat-stroked-button (click)="faixasComissao.push({ valorMinimo: '', valor: '' })"><mat-icon>add</mat-icon> Faixa</button>
-          <button mat-flat-button (click)="salvarFaixasComissao()"><mat-icon>save</mat-icon> Salvar faixas</button>
+          <button mat-button (click)="usarDocumento('comissao')">Usar valores do documento</button>
+          <button mat-flat-button (click)="salvarFaixasComissao()"><mat-icon>save</mat-icon> Salvar a partir de {{ mesBr(vigencia) }}</button>
         </div>
       </section>
       <section class="cartao faixas">
         <h2>Meta da semana (bônus fixo)</h2>
-        <p class="suave">Total vendido na semana (a partir de) → bônus em R$.</p>
+        <p class="suave">Total vendido na semana (a partir de) → bônus em R$, pago separado da comissão.
+          @if (c.faixasMetaSemanal.vigenteDesde && c.faixasMetaSemanal.vigenteDesde !== '2000-01') { Vigente desde {{ mesBr(c.faixasMetaSemanal.vigenteDesde) }}. }</p>
         <table class="tabela">
           <thead><tr><th>A partir de (R$)</th><th>Bônus (R$)</th><th></th></tr></thead>
           <tbody>@for (f of faixasMeta; track $index; let i = $index) {
@@ -52,12 +100,36 @@
               <td><button mat-icon-button (click)="faixasMeta.splice(i, 1)" aria-label="Remover"><mat-icon>close</mat-icon></button></td></tr>
           }</tbody>
         </table>
+        <div class="ref">Documento (item 3.1):
+          @for (d of c.faixasMetaSemanal.documento; track d.valorMinimo) { <b>{{ d.valorMinimo | moeda }} → {{ d.valor | moeda }}</b>{{ $last ? '' : ' · ' }} }
+          @if (faixasDiferentes(c.faixasMetaSemanal.faixas, c.faixasMetaSemanal.documento)) { <span class="badge PROVISORIA">alterado</span> }
+        </div>
         <div class="linha mt">
           <button mat-stroked-button (click)="faixasMeta.push({ valorMinimo: '', valor: '' })"><mat-icon>add</mat-icon> Patamar</button>
-          <button mat-flat-button (click)="salvarFaixasMeta()"><mat-icon>save</mat-icon> Salvar patamares</button>
+          <button mat-button (click)="usarDocumento('meta')">Usar valores do documento</button>
+          <button mat-flat-button (click)="salvarFaixasMeta()"><mat-icon>save</mat-icon> Salvar a partir de {{ mesBr(vigencia) }}</button>
         </div>
       </section>
     </div>
+
+    <section class="cartao">
+      <h2>Histórico e alterações agendadas</h2>
+      @for (v of historico(); track v.mes) {
+        <div class="vig" [class.agendada]="v.situacao === 'AGENDADA'" [class.vigente]="v.situacao === 'VIGENTE'">
+          <div class="linha entre">
+            <div>
+              <b>{{ v.mes === '2000-01' ? 'Carga inicial (valores do documento)' : 'A partir de ' + mesBr(v.mes) }}</b>
+              <span class="badge" [class.PROVISORIA]="v.situacao === 'AGENDADA'" [class.FECHADA]="v.situacao === 'VIGENTE'">
+                {{ { AGENDADA: 'agendada', VIGENTE: 'vigente hoje', HISTORICA: 'histórico' }[v.situacao] }}</span>
+              @if (v.registradoPor) { <span class="suave"> · {{ v.registradoPor }}</span> }
+              @if (v.registradoEm && v.mes !== '2000-01') { <span class="suave"> em {{ v.registradoEm | date: 'dd/MM/yyyy HH:mm' }}</span> }
+            </div>
+            @if (v.removivel) { <button mat-button (click)="excluirVigencia(v)"><mat-icon>delete</mat-icon> Excluir</button> }
+          </div>
+          <ul>@for (a of v.alteracoes; track a) { <li>{{ a }}</li> }</ul>
+        </div>
+      }
+    </section>
 
     <div class="grade">
       @for (l of listas; track l.chave) {

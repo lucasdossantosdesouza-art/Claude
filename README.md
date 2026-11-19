@@ -117,20 +117,39 @@ destacados para o vendedor conferir antes de salvar. O documento fica anexado à
 O sistema avisa quando a soma das parcelas difere do total, quando faltam o cliente ou os itens e quando a previsão
 de entrega cai num dia com produção bloqueada.
 
-## Regras de negócio (todas configuráveis em Parametrização)
+## Regras de negócio e parametrização
 
-- **Fixo** mensal: R$ 1.500,00.
-- **Faixas mensais** (total vendido no mês): R$ 58.000 → 1%, R$ 70.000 → 2%, R$ 80.000 → 3%.
-- **Teto da empresa** (R$ 230.000, soma de todos os vendedores). Se for ultrapassado no mês, quem não atingiu a meta
-  mínima recebe `PERCENTUAL_POS_TETO` (1%). Se não for ultrapassado, recebe `PERCENTUAL_ABAIXO_META` (0% por padrão).
-- **Meia Margem** (por OS): % da faixa × `FATOR_MEIA_MARGEM` (0,5).
-- **Mês de referência = mês da venda.** No fechamento (automático na virada do mês ou manual), a faixa de cada
-  vendedor fica **travada** para aquele mês.
+Todos os valores, percentuais e prazos do documento já vêm **cadastrados como padrão**: migrações Flyway `V2` e `V3`,
+com o item do documento de onde cada um veio. Todos podem ser **alterados depois** na tela *Parametrização* (perfil Gestor).
+
+| Parâmetro | Valor do documento | Origem |
+|---|---|---|
+| Salário fixo mensal | R$ 1.500,00 | item 3.1 |
+| Faixas de comissão (total vendido no mês) | R$ 58.000 → 1% · R$ 70.000 → 2% · R$ 80.000 → 3% | item 3.1 |
+| Meta da semana (bônus fixo) | R$ 20.133 → R$ 100 · R$ 23.810 → R$ 150 · R$ 26.690 → R$ 200 | item 3.1 |
+| Teto de faturamento mensal da empresa | R$ 230.000,00 | item 3.1 |
+| % para quem não atingiu a meta, empresa acima do teto | 1% | item 3.1 |
+| % para quem não atingiu a meta, empresa abaixo do teto | 0% (**não definido no documento — confirmar**) | item 3.2 |
+| Fator da Meia Margem | 0,5 (metade da faixa) | item 2.2 |
+| Tolerância para alerta de inadimplência | 0 dia | item 7 |
+| Fechamento automático na virada do mês | sim | item 3.2 |
+| Prazos complementares (aviso de vencimento, entrega sugerida, intervalo entre parcelas) | 3 / 10 / 30 dias | sugestão |
+| Listas: formas de pagamento, motivos de estorno, produtos do calendário, tipos de ocorrência | — | itens 2, 4 e 6 |
+
+**Vigência (alterações futuras):** cada alteração vale *a partir de um mês* escolhido.
+- Os meses anteriores continuam calculados com as regras da época: cada venda usa a regra vigente no mês da venda.
+- Dá para **agendar** uma mudança, por exemplo novas faixas a partir de janeiro. Uma alteração agendada pode ser
+  excluída antes de algum mês afetado ser fechado.
+- Meses já fechados não aceitam alteração, porque a faixa está travada.
+- Ao alterar um mês ainda em aberto, as comissões desse mês são recalculadas na hora.
+- O histórico mostra quem alterou, quando e o valor anterior → novo.
+- O botão *Restaurar valores do documento* volta tudo aos valores originais, a partir do mês escolhido.
+
+Como as regras são aplicadas:
+- **Mês de referência = mês da venda.** No fechamento (automático ou manual), a faixa de cada vendedor fica travada.
 - **Comissão gerada por parcela**: *pendente de recebimento* → *recebida (mês aberto)* → *autorizada para pagamento*
-  (destacada em vermelho) → *paga*. Sempre usa a faixa travada do mês da venda. Comissão já paga nunca é recalculada.
-  Cancelar a OS cancela as comissões pendentes.
-- **Meta semanal**: R$ 20.133 → R$ 100, R$ 23.810 → R$ 150, R$ 26.690 → R$ 200. Apurada por vendedor e paga separadamente.
-- **Inadimplência**: parcela vencida há mais de N dias sem comprovante gera alerta para o vendedor e para o financeiro.
+  (destacada em vermelho) → *paga*. Sempre usa a faixa travada do mês da venda; comissão paga nunca é recalculada.
+- **Meia Margem**: % da faixa × fator. **Meta semanal**: apurada por vendedor e paga separadamente.
 - **OS fechada** quando todas as parcelas são recebidas (cada recebimento exige o comprovante anexado).
 
 ## Funcionalidades por perfil

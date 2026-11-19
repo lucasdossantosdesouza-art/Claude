@@ -1,0 +1,14 @@
+.vigencia { border-left: 4px solid #2e75b6; }
+.params { display: grid; gap: .6rem 1.2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.param { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: .4rem; }
+.cheio { width: 100%; }
+.ref { font-size: .78rem; color: var(--suave); display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-top: .2rem; }
+.origem { flex-basis: 100%; font-style: italic; }
+.acoes { margin: -.4rem 0 1rem; }
+.faixas input { font: inherit; padding: .4rem; border: 1px solid #c8cfda; border-radius: 6px; width: 140px; }
+.lista { display: flex; flex-direction: column; gap: .2rem; margin-bottom: .6rem; }
+.vig { border: 1px solid var(--borda); border-radius: 10px; padding: .6rem .8rem; margin-bottom: .6rem; }
+.vig.agendada { border-color: #f59e0b; background: #fffbeb; }
+.vig.vigente { border-color: #16a34a; background: #f0fdf4; }
+.vig ul { margin: .3rem 0 0; padding-left: 1.2rem; font-size: .86rem; }
+.desc { font-size: .82rem; font-weight: 500; color: #374151; margin-bottom: .3rem; }

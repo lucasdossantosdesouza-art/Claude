@@ -4,7 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, Subject, switchMap } from 'rxjs';
 import { Api } from '../../core/api';
 import { Auth } from '../../core/auth';
-import { Cliente, DiaCalendario, Item, OsRequest, ResultadoImportacao, Usuario } from '../../core/models';
+import { Cliente, DiaCalendario, Item, OsRequest, parametro, ResultadoImportacao, Usuario } from '../../core/models';
 import { COMUNS, hojeIso, moeda, numeroBr, somarDias } from '../../shared';
 
 interface ParcelaLinha {
@@ -53,6 +53,9 @@ export class OsForm implements OnInit {
   protected readonly formas = signal<string[]>([]);
   protected readonly vendedores = signal<Usuario[]>([]);
   protected readonly capacidades = signal<{ ia: boolean; ocr: boolean } | null>(null);
+  /** Prazos sugeridos, vindos da parametrização. */
+  protected readonly prazoEntrega = signal(10);
+  protected readonly intervaloParcelas = signal(30);
   protected arrastando = false;
 
   // estado do formulário
@@ -68,7 +71,11 @@ export class OsForm implements OnInit {
   private readonly buscaCliente$ = new Subject<string>();
 
   ngOnInit(): void {
-    this.api.configuracao().subscribe((c) => this.formas.set(c.formasPagamento.filter((f) => f.ativo).map((f) => f.nome)));
+    this.api.configuracao().subscribe((c) => {
+      this.formas.set(c.formasPagamento.filter((f) => f.ativo).map((f) => f.nome));
+      this.prazoEntrega.set(parametro(c, 'PRAZO_ENTREGA_PADRAO_DIAS', 10));
+      this.intervaloParcelas.set(parametro(c, 'INTERVALO_PARCELAS_DIAS', 30));
+    });
     if (this.auth.isGestor()) this.api.vendedores().subscribe((v) => this.vendedores.set(v));
     this.api.capacidadesLeitura().subscribe((c) => this.capacidades.set(c));
     this.buscaCliente$.pipe(debounceTime(250), switchMap((q) => this.api.clientes(q)))

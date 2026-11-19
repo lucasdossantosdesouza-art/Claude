@@ -44,7 +44,7 @@ export class Metas implements OnInit {
   protected mes = hojeIso().substring(0, 7);
 
   ngOnInit(): void {
-    this.api.configuracao().subscribe((c) => this.faixas.set(c.faixasMetaSemanal));
+    this.api.configuracao().subscribe((c) => this.faixas.set(c.faixasMetaSemanal.faixas));
     this.carregar();
   }
 

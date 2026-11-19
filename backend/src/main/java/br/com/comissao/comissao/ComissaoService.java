@@ -105,7 +105,7 @@ public class ComissaoService {
             fm.setFaturamentoEmpresa(f.faturamentoEmpresa());
             fm.setPercentual(f.percentual());
             fm.setRegra(f.regra());
-            fm.setSalarioFixo(parametros.valor(ChaveParametro.SALARIO_FIXO));
+            fm.setSalarioFixo(parametros.valor(ChaveParametro.SALARIO_FIXO, mes));
             fm.setFechadoEm(LocalDateTime.now(clock));
             novos.add(fechamentos.save(fm));
         }

@@ -6,8 +6,6 @@ import { ItemLista, OsDetalhe } from '../../core/models';
 import { Arquivos } from '../../shared/arquivos';
 import { COMUNS, hojeIso, numeroBr } from '../../shared';
 
-const TIPOS_OCORRENCIA = ['Defeito', 'Troca', 'Retrabalho', 'Insatisfação', 'Atraso', 'Outro'];
-
 @Component({
   selector: 'app-os-detalhe',
   imports: [COMUNS],
@@ -32,7 +30,7 @@ export class OsDetalhePage {
   protected readonly ocupado = signal(false);
   protected readonly hoje = hojeIso();
   protected readonly window = window;
-  protected readonly tiposOcorrencia = TIPOS_OCORRENCIA;
+  protected readonly tiposOcorrencia = signal<string[]>([]);
 
   protected datasRecebimento: Record<number, string> = {};
   protected comprovantes: Record<number, File | null> = {};
@@ -43,7 +41,11 @@ export class OsDetalhePage {
 
   constructor() {
     effect(() => this.carregar(+this.id()));
-    this.api.configuracao().subscribe((c) => this.motivos.set(c.motivosEstorno.filter((m) => m.ativo)));
+    this.api.configuracao().subscribe((c) => {
+      this.motivos.set(c.motivosEstorno.filter((m) => m.ativo));
+      this.tiposOcorrencia.set(c.tiposOcorrencia.filter((t) => t.ativo).map((t) => t.nome));
+      if (this.tiposOcorrencia().length) this.ocorrencia.tipo = this.tiposOcorrencia()[0];
+    });
   }
 
   private carregar(id: number): void {

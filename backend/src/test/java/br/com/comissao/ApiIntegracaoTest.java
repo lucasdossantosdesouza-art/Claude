@@ -129,10 +129,13 @@ class ApiIntegracaoTest {
 
         // 7. parametrização só para gestor
         mvc.perform(put("/api/parametros/gerais").with(VENDEDOR).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"SALARIO_FIXO\": 2000}")).andExpect(status().isForbidden());
+                .content("{\"vigenteDesde\":\"2026-12\",\"valores\":{\"SALARIO_FIXO\": 2000}}")).andExpect(status().isForbidden());
         mvc.perform(put("/api/parametros/gerais").with(GESTOR).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"SALARIO_FIXO\": 1600}")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.gerais[0].valor").value(1600));
+                        .content("{\"vigenteDesde\":\"2026-12\",\"valores\":{\"SALARIO_FIXO\": 1600}}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.configuracao.gerais[0].valor").value(1600))
+                .andExpect(jsonPath("$.configuracao.gerais[0].valorDocumento").value(1500));
+        mvc.perform(get("/api/parametros?mes=2026-11").with(GESTOR)).andExpect(jsonPath("$.gerais[0].valor").value(1500));
+        mvc.perform(get("/api/parametros/vigencias").with(GESTOR)).andExpect(jsonPath("$[0].situacao").value("AGENDADA"));
 
         // 8. cancelamento exige justificativa; com justificativa cancela e aparece nos estornos
         mvc.perform(multipart("/api/os/" + id + "/cancelamento").file(new MockMultipartFile("dados", "", "application/json",
