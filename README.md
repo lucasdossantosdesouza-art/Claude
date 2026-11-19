@@ -78,7 +78,9 @@ cd frontend && npm install && npx ng serve
 ```
 
 Variáveis da API: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_JWKS_URI`, `CORS_ORIGINS`,
-`STORAGE_DIR`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL` e `TESSERACT_CMD`.
+`STORAGE_DIR`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `TESSERACT_CMD` e `KEYCLOAK_ISSUER_POR_CAMINHO`
+(`true` só atrás de proxy com endereço público variável: aceita o emissor pelo caminho `/realms/comissao`;
+a assinatura do token continua validada pelas chaves do Keycloak).
 O frontend lê `config.json` em tempo de execução (URL da API e do Keycloak). No Docker, esse arquivo é gerado a
 partir de `API_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM` e `KEYCLOAK_CLIENT_ID`, então o mesmo build serve qualquer ambiente.
 

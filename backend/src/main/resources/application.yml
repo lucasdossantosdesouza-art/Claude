@@ -48,6 +48,9 @@ app:
     # Caminho do executável do Tesseract (opcional, para fotos e PDFs digitalizados)
     tesseract: ${TESSERACT_CMD:tesseract}
   zona: America/Sao_Paulo
+  seguranca:
+    # true: aceita o emissor pelo caminho do realm (útil atrás de proxy com endereço variável)
+    issuer-por-caminho: ${KEYCLOAK_ISSUER_POR_CAMINHO:false}
 
 management:
   endpoints:
